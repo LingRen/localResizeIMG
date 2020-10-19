@@ -6,6 +6,21 @@ var Promise          = require('Promise'),
     BlobFormDataShim = require('Blob.FormData.shim'),
     exif             = require('exif');
 
+var isAutoOrt = function () {
+    return new Promise(resolve => {
+        // black+white 3x2 JPEG, EXIF Orientation: 6 (Rotated 90°)
+        var testImageURL =
+            'data:image/jpeg;base64,/9j/4QAiRXhpZgAATU0AKgAAAAgAAQESAAMAAAABAAYAAAAAAAD/2wCEAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAf/AABEIAAIAAwMBEQACEQEDEQH/xABRAAEAAAAAAAAAAAAAAAAAAAAKEAEBAQADAQEAAAAAAAAAAAAGBQQDCAkCBwEBAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AG8T9NfSMEVMhQvoP3fFiRZ+MTHDifa/95OFSZU5OzRzxkyejv8ciEfhSceSXGjS8eSdLnZc2HDm4M3BxcXwH/9k='
+        var img = document.createElement('img')
+        img.onload = function () {
+            // Check browser supports automatic image orientation
+            resolve(img.width === 2 && img.height === 3)
+        }
+        img.src = testImageURL
+    }).then(function (res) {
+        return res
+    })
+};
 
 var UA = (function (userAgent) {
     var ISOldIOS     = /OS (.*) like Mac OS X/g.exec(userAgent),
@@ -19,7 +34,6 @@ var UA = (function (userAgent) {
     var IOS_VERSION = ISOldIOS ? +ISOldIOS.pop().replace(/_/g, '.') : 0
     return {
         oldIOS    : ISOldIOS ? IOS_VERSION < 8 : false,
-        newIOS    : ISOldIOS ? IOS_VERSION >= 13.4 : false,
         oldAndroid: isOldAndroid ? +isOldAndroid.pop().substr(0, 3) < 4.5 : false,
         iOS       : /\(i[^;]+;( U;)? CPU.+Mac OS X/.test(userAgent),
         android   : /Android/g.test(userAgent),
@@ -144,25 +158,28 @@ Lrz.prototype._getBase64 = function () {
         try {
             // 传入blob在android4.3以下有bug
             exif.getData(typeof file === 'object' ? file : img, function () {
-                that.orientation = that.defaults.ingnoreOrientation ? 0 : exif.getTag(this, "Orientation");
+                isAutoOrt().then(function(res) {
+                    console.log(res)
+                    that.orientation = res ? 0 : exif.getTag(this, "Orientation");
 
-                that.resize = that._getResize();
-                that.ctx    = canvas.getContext('2d');
-
-                canvas.width  = that.resize.width;
-                canvas.height = that.resize.height;
-
-                // 设置为白色背景，jpg是不支持透明的，所以会被默认为canvas默认的黑色背景。
-                that.ctx.fillStyle = '#fff';
-                that.ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                // 根据设备对应处理方式
-                if (UA.oldIOS) {
-                    that._createBase64ForOldIOS().then(resolve);
-                }
-                else {
-                    that._createBase64().then(resolve);
-                }
+                    that.resize = that._getResize();
+                    that.ctx    = canvas.getContext('2d');
+    
+                    canvas.width  = that.resize.width;
+                    canvas.height = that.resize.height;
+    
+                    // 设置为白色背景，jpg是不支持透明的，所以会被默认为canvas默认的黑色背景。
+                    that.ctx.fillStyle = '#fff';
+                    that.ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+                    // 根据设备对应处理方式
+                    if (UA.oldIOS) {
+                        that._createBase64ForOldIOS().then(resolve);
+                    }
+                    else {
+                        that._createBase64().then(resolve);
+                    }
+                })
             });
         } catch (err) {
             // 这样能解决低内存设备闪退的问题吗？
