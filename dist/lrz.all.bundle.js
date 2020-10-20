@@ -2505,16 +2505,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var isAutoOrt = function () {
 	    return new Promise(resolve => {
-	        // black+white 3x2 JPEG, with the following meta information set:
-	        // - EXIF Orientation: 6 (Rotated 90° CCW)
-	        // Image data layout (B=black, F=white):
-	        // BFF
-	        // BBB
+	        // black+white 3x2 JPEG, EXIF Orientation: 6 (Rotated 90°)
 	        var testImageURL =
 	            'data:image/jpeg;base64,/9j/4QAiRXhpZgAATU0AKgAAAAgAAQESAAMAAAABAAYAAAAAAAD/2wCEAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAf/AABEIAAIAAwMBEQACEQEDEQH/xABRAAEAAAAAAAAAAAAAAAAAAAAKEAEBAQADAQEAAAAAAAAAAAAGBQQDCAkCBwEBAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AG8T9NfSMEVMhQvoP3fFiRZ+MTHDifa/95OFSZU5OzRzxkyejv8ciEfhSceSXGjS8eSdLnZc2HDm4M3BxcXwH/9k='
 	        var img = document.createElement('img')
 	        img.onload = function () {
-	            // Check if the browser supports automatic image orientation:
+	            // Check browser supports automatic image orientation
 	            resolve(img.width === 2 && img.height === 3)
 	        }
 	        img.src = testImageURL
@@ -2659,9 +2655,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        try {
 	            // 传入blob在android4.3以下有bug
 	            exif.getData(typeof file === 'object' ? file : img, function () {
+	                var exifThis = this;
 	                isAutoOrt().then(function(res) {
-	                    console.log(res)
-	                    that.orientation = res ? 0 : exif.getTag(this, "Orientation");
+	                    that.orientation = res ? 0 : exif.getTag(exifThis, "Orientation");
 
 	                    that.resize = that._getResize();
 	                    that.ctx    = canvas.getContext('2d');

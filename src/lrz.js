@@ -158,9 +158,9 @@ Lrz.prototype._getBase64 = function () {
         try {
             // 传入blob在android4.3以下有bug
             exif.getData(typeof file === 'object' ? file : img, function () {
+                var exifThis = this;
                 isAutoOrt().then(function(res) {
-                    console.log(res)
-                    that.orientation = res ? 0 : exif.getTag(this, "Orientation");
+                    that.orientation = res ? 0 : exif.getTag(exifThis, "Orientation");
 
                     that.resize = that._getResize();
                     that.ctx    = canvas.getContext('2d');
